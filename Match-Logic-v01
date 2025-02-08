@@ -1,0 +1,198 @@
+import 'dart:math';
+
+double calculateMatchScore(
+    Map<String, dynamic> userAAnswers,
+    Map<String, dynamic> userBAnswers,
+    List<dynamic> questions,
+) {
+  double score = 0;
+  double maxPossibleScore = 0;
+
+  for (var question in questions) {
+    String questionText = question['questionText'];
+    String questionType = question['questionType'];
+    int weight = question['weight'];
+
+    maxPossibleScore += weight; // Accumulate max score
+
+    if (userAAnswers.containsKey(questionText) &&
+        userBAnswers.containsKey(questionText)) {
+      var answerA = userAAnswers[questionText];
+      var answerB = userBAnswers[questionText];
+
+      switch (questionType) {
+        case 'singleChoice':
+          if (answerA == answerB) {
+            score += weight;
+          }
+          break;
+        case 'multipleChoice':
+          if (answerA is List && answerB is List) {
+            for (var a in answerA) {
+              if (answerB.contains(a)) {
+                score += weight;
+                break; // Only add weight once per matching answer
+              }
+            }
+          }
+          break;
+        case 'range':
+          int min = question['min'];
+          int max = question['max'];
+
+          if (answerA is int && answerB is int) {
+            // Check if ranges overlap (simplified)
+            bool overlap = (answerA >= min && answerA <= max) &&
+                (answerB >= min && answerB <= max);
+
+            if (overlap) {
+              // Calculate "closeness" (example - you can customize)
+              int diff = (answerA - answerB).abs();
+              double closenessFactor = 1 - (diff / (max - min)); // Higher score for closer values.
+              score += weight * closenessFactor;
+            }
+          }
+          break;
+      }
+    }
+  }
+
+  // Normalize the score (to a percentage)
+  if (maxPossibleScore > 0) {
+    return (score / maxPossibleScore) * 100;
+  } else {
+    return 0; // Avoid division by zero
+  }
+}
+
+
+
+// Example usage (you would get this data from your app's state):
+void main() {
+  Map<String, dynamic> userAAnswers = {
+    "About me - Ideal relationship style?": "Serious",
+    "Tribe Location?": "Local",
+    "Dating - Height?": ["5'4\"-5'8\"", "5'8\"-6'0\""],
+    "Dating  -  Age Range?": 30,
+    "About Me - Smoking?": "no",
+    "About Me - 420 Smoking?": "no",
+    "About Me - Drinking?": "occasionally",
+    "Dating - Drinking?": "either",
+    "About Me - Have Children?": "no",
+    "Tribe - Have Children?": "no",
+    "Dating - Want Children?": "yes",
+    "About Me - Pets?": "dogs",
+    "Dating - Pets?": "any",
+    "About Me - Phone type?": "iphone",
+    "About Me - Highest education completed?": "bachelors",
+    "About Me - Current student?": "no",
+    "About me - Political Views?": "Liberal",
+    "Dating - Political Views?": "any",
+    "Tribe - Political Views?": "any",
+    "About me - Weight?": "150-200",
+    "Dating - Weight?": ["150-200", "200-250"],
+    "About me - Body type?": "Average",
+    "Dating - Body type?": ["Average","Athletic"],
+    "About me - Income?": "$0-$90k",
+    "About me - Ethnicity": "White",
+    "Dating - Ethnicity": ["White","Asian"],
+    "About me - Religion?": "Atheist",
+    "Dating - Religion?": ["Atheist","None"],
+    "About me - Primary intentions?": "Dating",
+    "About me - also open to?": "None",
+    "About me - Occupation?": ["Technology and Science(STEM)"],
+    "About me - Hobbies?": ["Coding", "Gym workout"],
+    "About me - Interests?": ["Intellectual and Education"],
+    "About Me - Languages?": ["English", "Spanish"],
+    "What is your relationship status?": "single",
+    "What is your Diet Like?": ["No Restrictions"]
+  };
+
+  Map<String, dynamic> userBAnswers = {
+    "About me - Ideal relationship style?": "Long-term",
+    "Tribe Location?": "Local",
+    "Dating - Height?": ["5'8\"-6'0\"", "6'0\"-6'4\""],
+    "Dating  -  Age Range?": 35,
+    "About Me - Smoking?": "no",
+    "About Me - 420 Smoking?": "no",
+    "About Me - Drinking?": "occasionally",
+    "Dating - Drinking?": "either",
+    "About Me - Have Children?": "no",
+    "Tribe - Have Children?": "no",
+    "Dating - Want Children?": "yes",
+    "About Me - Pets?": "dogs",
+    "Dating - Pets?": "any",
+    "About Me - Phone type?": "iphone",
+    "About Me - Highest education completed?": "master",
+    "About Me - Current student?": "no",
+    "About me - Political Views?": "Liberal",
+    "Dating - Political Views?": "any",
+    "Tribe - Political Views?": "any",
+    "About me - Weight?": "150-200",
+    "Dating - Weight?": ["150-200"],
+    "About me - Body type?": "Athletic",
+    "Dating - Body type?": ["Average","Athletic"],
+    "About me - Income?": "$90k+",
+    "About me - Ethnicity": "White",
+    "Dating - Ethnicity": ["White"],
+    "About me - Religion?": "Atheist",
+    "Dating - Religion?": ["Atheist"],
+    "About me - Primary intentions?": "Dating",
+    "About me - also open to?": "None",
+    "About me - Occupation?": ["Technology and Science(STEM)"],
+    "About me - Hobbies?": ["Coding", "Gym workout"],
+    "About me - Interests?": ["Intellectual and Education"],
+    "About Me - Languages?": ["English"],
+    "What is your relationship status?": "single",
+    "What is your Diet Like?": ["No Restrictions"]
+  };
+
+  List<dynamic> questions = [
+    {
+      "questionText": "About me - Ideal relationship style?",
+      "questionType": "singleChoice",
+      "answers": ["Casual", "Serious", "Long-term"],
+      "weight": 20
+    },
+    {
+      "questionText": "Tribe Location?",
+      "questionType": "singleChoice",
+      "answers": ["Local", "Online", "any"],
+      "weight": 10
+    },
+    {
+      "questionText": "Dating - Height?",
+      "questionType": "multipleChoice",
+      "answers": [
+        "Under 5'0\"",
+        "5'0\"-5'4\"",
+        "5'4\"-5'8\"",
+        "5'8\"-6'0\"",
+        "6'0\"-6'4\"",
+        "6'4\"+"
+      ],
+      "weight": 10
+    },
+    {
+      "questionText": "Dating  -  Age Range?",
+      "questionType": "range",
+      "min": 10,
+      "max": 80,
+      "weight": 20
+    },
+    {
+      "questionText": "About Me - Smoking?",
+      "questionType": "singleChoice",
+      "answers": ["yes", "no", "occasionally"],
+      "weight": 20
+    },
+    {
+      "questionText": "About Me - 420 Smoking?",
+      "questionType": "singleChoice",
+      "answers": ["yes", "no", "occasionally"],
+      "weight": 10
+    },
+    {
+      "questionText": "About Me - Drinking?",
+      "questionType": "singleChoice",
+      "answers": ["yes", "no", "occasionally"],
